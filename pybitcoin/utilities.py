@@ -1,4 +1,4 @@
-import StringIO,struct
+import StringIO,struct,math
 def prettyhex(bin,newlinesEvery=8):
     l = ["0x{0:02X}".format(ord(z)) for z in bin]
     if newlinesEvery:
@@ -23,6 +23,13 @@ class Reader(object):
     def getInt64(self,byteOrder='<'): return self._get('q')
     def getUInt(self,byteOrder='<'): return self._get('I')
     def getUInt64(self,byteOrder='<'): return self._get('Q')
+    def getUInt256(self,byteOrder='<'): 
+        b = []
+        for a in range(32): b.append(self.getUByte())
+        res = 0
+        for i,a in enumerate(b):
+            res += a*int(math.pow(8,i))
+        return res
     def getShort(self,byteOrder='<'): return self._get('h')
     def getByte(self,byteOrder='<'): return self._get('b')
     def getUShort(self,byteOrder='<'): return self._get('H')

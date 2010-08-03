@@ -12,7 +12,7 @@ class Header(object):
         command = command.strip(chr(0))
         
         # Verify that the message starts with the right 4 bytes
-        assert start == self.START
+#        assert start == self.START
 
         # Set the proper variables
         self.command = command

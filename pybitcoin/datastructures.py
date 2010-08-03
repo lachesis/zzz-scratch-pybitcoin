@@ -1,4 +1,56 @@
 from pybitcoin.utilities import *
+COINS = 100000000
+
+class COutPoint(object):
+    def unserialize(self,bytes):
+        r = Reader(bytes)
+        self.hash = r.getUInt256()
+        self.n = r.getUInt()
+        return self
+
+    def __str__(self):
+#        return str(self.hash)
+        return "COutPoint({0}..,{1})".format(hex(self.hash)[2:8],self.n)
+
+class CTxOut(object):
+    def __init__(self):
+        self.nValue = 0
+
+    def __getattr__(self,key):
+        if key == 'value':
+            return self.nValue / float(COINS)            
+        else:
+            raise AttributeError("CTxOut has no such key '{0}'".format(key))
+    
+    def unserialize(self,bytes):
+        r = Reader(bytes)
+        self.nValue = r.getUInt64()
+        size = r.getUByte()
+        self.scriptPubKey = CScript().unserialize(r.getString(size))
+        return self
+
+    def __str__(self):
+        return "CTxOut: {0.value}".format(self)
+
+class CTxIn(object):
+    def unserialize(self,bytes):
+        r = Reader(bytes)
+        self.prevout = COutPoint().unserialize(r.getString(36))
+        self.scriptSig = CScript().unserialize(r.getString(r.getUByte()))
+        self.nSequence = r.getUInt()
+        return self
+
+    def __str__(self):
+        return "CTxIn: {0.prevout} seq = {0.nSequence}".format(self)
+    
+class CScript(object):
+    def unserialize(self,bytes):
+        self.bytes = bytes
+        return self
+
+    def __str__(self):
+        return self.bytes
+
 class CAddress(object):
     def __init__(self):
         self.nServices = 1
