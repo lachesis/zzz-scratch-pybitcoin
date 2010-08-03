@@ -19,6 +19,13 @@ class Reader(object):
     def advance(self,length): # Ignore this many bytes
         self.stringIO.read(length)
 
+    def getSize(self): 
+        first = self.getUByte()
+        if first == 255: return self.getUInt64()
+        elif first == 254: return self.getUInt()
+        elif first == 253: return self.getUShort()
+        else: return first
+
     def getInt(self,byteOrder='<'): return self._get('i')
     def getInt64(self,byteOrder='<'): return self._get('q')
     def getUInt(self,byteOrder='<'): return self._get('I')
@@ -48,6 +55,19 @@ class Writer(object):
 
     def pad(self,length): # Ignore this many bytes
         self.output += '\0'*length
+
+    def putSize(self,size):
+        if size < 253:
+            return self.putUByte(size)
+        elif size <= math.pow(8,2): 
+            self.putUByte(253)
+            return self.putUShort(size)
+        elif size <= math.pow(8,4): 
+            self.putUByte(254)
+            return self.putUInt(size)
+        else: 
+            self.putUByte(255)
+            return self.putUInt64(size)
 
     def putInt(self,value,byteOrder='<'): return self._put(value,'i')
     def putInt64(self,value,byteOrder='<'): return self._put(value,'q')

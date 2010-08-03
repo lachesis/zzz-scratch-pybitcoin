@@ -1,6 +1,7 @@
 import struct
 from pybitcoin.utilities import *
 from pybitcoin.datastructures import *
+VERSION = 307
 
 class Header(object):
     START = '\xf9\xbe\xb4\xd9'
@@ -12,7 +13,7 @@ class Header(object):
         command = command.strip(chr(0))
         
         # Verify that the message starts with the right 4 bytes
-#        assert start == self.START
+        assert start == self.START
 
         # Set the proper variables
         self.command = command
@@ -30,6 +31,14 @@ class Header(object):
             w.putInt(self.checksum)
         return str(w)
 
+    def shouldHaveChecksum(self):
+        return bool(self.command != 'version' and self.size > 0 and VERSION > 209)         
+    
+    def addChecksum(self,bytes):
+        assert len(bytes) == 4
+        r = Reader(bytes)
+        self.checksum = r.getUInt()        
+
     def __str__(self):
         return '"{0.command}" {0.size}b (checksum: {0.checksum})'.format(self)
 
@@ -43,16 +52,26 @@ class Message(object):
 
         self.header.size = len(self.bytes)
         self.header.checksum = self._calculateChecksum()
+        return self.header
 
     def serialize(self): return ''
-    def unserialize(self,bytes): return self
+    def unserialize(self,bytes): 
+        self.bytes = bytes
+        return self
     def _calculateChecksum(self): return None
+    def __str__(self):
+        if not self.header: self._buildHeader()
+        return "{0}\n{1}\n".format(self.header,prettyhex(self.bytes))
 
 def newMessageObject(command):
-    if command == 'verack':
-        return Verack()
-    elif command == 'version':
-        return Version()
+    d = {
+        'verack': Verack,
+        'version': Version,
+        'inv': Inv,
+        'getdata': Getdata,
+    }
+    if command in d:
+        return d[command]()
     return Message()
 
 class Verack(Message):
@@ -83,7 +102,7 @@ class Version(Message):
         self.addrYou = CAddress().unserialize(r.getString(26))
         self.addrMe = CAddress().unserialize(r.getString(26))
         self.nLocalHostNonce = r.getUInt64()
-        vSubStrLen = r._get('B')
+        vSubStrLen = r.getSize()
         self.vSubStr = r.getString(vSubStrLen)
         self.nBestHeight = r.getInt()
         return self
@@ -103,3 +122,25 @@ class Version(Message):
         s += "vSubStr: \"{0}\"\n".format(self.vSubStr)
         s += "nBestHeight: {0}\n".format(self.nBestHeight)
         return s            
+
+class Inv(Message):
+    COMMAND = 'inv'
+    def unserialize(self,bytes):
+        super(Inv,self).unserialize(bytes)
+        r = Reader(bytes)
+        self.vInv = []
+        for m in range(r.getSize()):
+            self.vInv.append(CInv().unserialize(r.getString(36)))
+        return self
+
+    def __str__(self):
+        s = ''
+        try: self.header
+        except AttributeError: self._buildHeader()
+        try: s += "{0}\n".format(self.header)
+        except AttributeError: pass
+        s += '\n'.join([str(z) for z in self.vInv])
+        return s
+
+class Getdata(Inv):
+    COMMAND = 'getdata'

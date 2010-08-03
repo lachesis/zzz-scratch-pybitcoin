@@ -25,8 +25,7 @@ class CTxOut(object):
     def unserialize(self,bytes):
         r = Reader(bytes)
         self.nValue = r.getUInt64()
-        size = r.getUByte()
-        self.scriptPubKey = CScript().unserialize(r.getString(size))
+        self.scriptPubKey = CScript().unserialize(r.getString(r.getSize()))
         return self
 
     def __str__(self):
@@ -36,7 +35,7 @@ class CTxIn(object):
     def unserialize(self,bytes):
         r = Reader(bytes)
         self.prevout = COutPoint().unserialize(r.getString(36))
-        self.scriptSig = CScript().unserialize(r.getString(r.getUByte()))
+        self.scriptSig = CScript().unserialize(r.getString(r.getSize()))
         self.nSequence = r.getUInt()
         return self
 
@@ -50,6 +49,26 @@ class CScript(object):
 
     def __str__(self):
         return self.bytes
+
+class CInv(object):
+    TYPES = [ 'ERROR', 'tx', 'block' ]
+    type = 0
+    def __getattr__(self,key):
+        if key == 'typeStr':
+            if self.type and self.type < len(self.TYPES) and self.type > 0:
+                return self.TYPES[self.type]
+            else: return str(self.type)
+        else: raise AttributeError("CInv has no such key '{0}'".format(key))
+
+    def unserialize(self,bytes):
+#        super(CInv,self).unserialize(bytes)
+        r = Reader(bytes)
+        self.type = r.getInt()
+        self.hash = r.getUInt256()
+        return self
+
+    def __str__(self):
+        return "Hash: {0.hash:032x} (type {0.type}: {0.typeStr})\n".format(self)
 
 class CAddress(object):
     def __init__(self):
