@@ -81,6 +81,12 @@ class Version(Message):
     COMMAND = 'version'
     def _calculateChecksum(self): pass
 
+    def __getattr__(self,key):
+        if key == 'vStr':
+            return "{0:d}.{1:d}.{2:d}{3}".format(self.version/10000,self.version/100%100,self.version%100,self.vSubStr)
+        else:
+            raise AttributeError("'Version' has no such key '{0}'".format(key))
+
     def serialize(self):
         w = Writer()
         w.putInt(self.version)
@@ -113,7 +119,7 @@ class Version(Message):
         except AttributeError: self._buildHeader()
         try: s += "{0}\n".format(self.header)
         except AttributeError: pass
-        s += "Version: {0}\n".format(self.version)
+        s += "Version: {0} ({1})\n".format(self.version,self.vStr)
         s += "nLocalServices: {0}\n".format(self.nLocalServices)
         s += "nTime: {0}\n".format(self.nTime)
         s += "addrYou: {0}\n".format(self.addrYou)

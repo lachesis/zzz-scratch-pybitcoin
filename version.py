@@ -30,7 +30,7 @@ class Client(object):
 
 class CNode(object):
     def __init__(self,host,port=8333):
-        self.host = host
+        self.host = socket.gethostbyname(host)
         self.port = port
         self.version = None
         self.messages = []
@@ -51,7 +51,7 @@ class CNode(object):
             headdata += self.socket.recv(4)
             header.unserialize(headdata)
             
-        print "Getting",header
+#        print "Getting",header
 
         m = newMessageObject(header.command)
         m.header = header
@@ -61,7 +61,7 @@ class CNode(object):
 
     def sendMessage(self,message):
         message._buildHeader()
-        print "Sending",message.header
+#        print "Sending",message.header
         self.socket.send(message.header.serialize()+message.bytes)
 
 if __name__ == '__main__':
@@ -74,9 +74,9 @@ if __name__ == '__main__':
     them = CNode(HOST,PORT)
     client.connect(them)
 
-    print
+#    print
     print them.version
-    them.sendMessage()
+#    them.sendMessage()
 
-    for m in them.messages:
-        print "Got",m.header
+#    for m in them.messages:
+#        print "Got",m.header
