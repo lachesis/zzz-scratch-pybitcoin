@@ -39,9 +39,9 @@ class CNode(object):
         self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.socket.connect((self.host,self.port))
         self.version = self.getMessage()
-        self.sendMessage(me.buildVersion(self))
+#        self.sendMessage(me.buildVersion(self))
         self.sendMessage(Verack())
-        self.messages.append(self.getMessage())
+#        self.messages.append(self.getMessage())
 
     def getMessage(self):
         header = Header()
